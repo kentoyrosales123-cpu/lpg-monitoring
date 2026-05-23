@@ -1,0 +1,225 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Admin Dashboard</title>
+    <link rel="stylesheet" href="/style.css" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  </head>
+  <body onload="initAdmin()">
+    <nav class="nav">
+      <a class="brand" href="/"
+        ><span class="brand-badge">LPG</span> Admin Dashboard</a
+      >
+      <div class="nav-links">
+        <button class="btn" onclick="csvDownloadAdmin()">Export CSV</button
+        ><button class="btn danger" onclick="logout()">Logout</button>
+      </div>
+    </nav>
+    <div class="layout">
+      <aside class="sidebar">
+        <a class="active" href="#" onclick="showAdminSection('overview', this)"
+          >Overview</a
+        >
+        <a href="#" onclick="showAdminSection('transactions', this)"
+          >All Transactions</a
+        >
+        <a href="#" onclick="showAdminSection('users', this)"
+          >User Management</a
+        >
+      </aside>
+      <main class="main">
+        <section id="overview" class="grid admin-section">
+          <h1>Admin Analytics</h1>
+
+          <div class="grid cards">
+            <div class="card">
+              <span class="muted">Total Tanks</span>
+              <div id="adminTotalTanks" class="metric">0</div>
+            </div>
+
+            <div class="card">
+              <span class="muted">Total Records</span>
+              <div id="adminTotalRecords" class="metric">0</div>
+            </div>
+
+            <div class="card">
+              <span class="muted">Critical Alerts</span>
+              <div id="adminCritical" class="metric">0</div>
+            </div>
+
+            <div class="card">
+              <span class="muted">Users</span>
+              <div id="adminUsersCount" class="metric">0</div>
+            </div>
+          </div>
+
+          <div class="admin-chart-layout">
+            <div class="card level-chart-card">
+              <h2>LPG Level</h2>
+              <canvas id="levelChart"></canvas>
+            </div>
+
+            <div class="tank-admin-charts">
+              <div class="card tank-chart-card">
+                <h2>LPG Tank 1</h2>
+                <canvas id="tankPressureChart1"></canvas>
+              </div>
+
+              <div class="card tank-chart-card">
+                <h2>LPG Tank 2</h2>
+                <canvas id="tankPressureChart2"></canvas>
+              </div>
+
+              <div class="card tank-chart-card">
+                <h2>LPG Tank 3</h2>
+                <canvas id="tankPressureChart3"></canvas>
+              </div>
+
+              <div class="card tank-chart-card">
+                <h2>LPG Tank 4</h2>
+                <canvas id="tankPressureChart4"></canvas>
+              </div>
+            </div>
+          </div>
+        </section>
+        <section
+          id="transactions"
+          class="card admin-section"
+          style="margin-top: 22px; display: none"
+        >
+          <h2>All Transactions</h2>
+          <div class="toolbar">
+            <input
+              id="searchInput"
+              placeholder="Search tank/status/remarks"
+            /><select id="statusFilter">
+              <option value="">All Status</option>
+              <option>Normal</option>
+              <option>Warning</option>
+              <option>Critical</option></select
+            ><input id="fromFilter" type="date" /><input
+              id="toFilter"
+              type="date"
+            /><button class="btn" onclick="loadAdminReadings()">Filter</button>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Tank</th>
+                  <th>Date/Time</th>
+                  <th>Level</th>
+                  <th>Pressure</th>
+                  <th>Temp</th>
+                  <th>Status</th>
+                  <th>Submitted By</th>
+                  <th>Remarks</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody id="adminReadingsTable"></tbody>
+            </table>
+          </div>
+        </section>
+        <section
+          id="users"
+          class="card admin-section"
+          style="margin-top: 22px; display: none"
+        >
+          <h2>Registered Users</h2>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Name</th>
+                  <th>Email</th>
+                  <th>Role</th>
+                  <th>Status</th>
+                  <th>Created</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="usersTable"></tbody>
+            </table>
+          </div>
+        </section>
+      </main>
+    </div>
+    <div id="editModal" class="modal">
+      <div class="modal-box">
+        <h2>Edit Tank Reading</h2>
+        <form class="form" onsubmit="saveEdit(event)">
+          <input type="hidden" name="id" id="editId" />
+          <div class="grid two">
+            <label
+              >Tank ID<input name="tankId" id="editTankId" required /></label
+            ><label
+              >Date/Time<input
+                name="readingDateTime"
+                id="editDateTime"
+                type="datetime-local"
+                required /></label
+            ><label
+              >LPG Level<input
+                name="lpgLevel"
+                id="editLevel"
+                type="number"
+                step="0.01"
+                required /></label
+            ><label
+              >Pressure<input
+                name="pressure"
+                id="editPressure"
+                type="number"
+                step="0.01"
+                required /></label
+            ><label
+              >Temperature<input
+                name="temperature"
+                id="editTemperature"
+                type="number"
+                step="0.01"
+                required /></label
+            ><label
+              >Volume<input
+                name="volume"
+                id="editVolume"
+                type="number"
+                step="0.01"
+                required /></label
+            ><label
+              >Weight<input
+                name="weight"
+                id="editWeight"
+                type="number"
+                step="0.01"
+                required
+            /></label>
+          </div>
+          <label
+            >Remarks<textarea name="remarks" id="editRemarks"></textarea>
+          </label>
+          <div class="nav-links">
+            <button class="btn primary">Save Changes</button
+            ><button type="button" class="btn" onclick="closeEditModal()">
+              Cancel
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+    <div id="toast" class="toast"></div>
+    <script src="/script.js"></script>
+    <script src="/admin.js"></script>
+  </body>
+</html>
