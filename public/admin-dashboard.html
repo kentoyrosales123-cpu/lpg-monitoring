@@ -21,6 +21,12 @@
         ><span class="brand-badge">LPG</span> Admin Dashboard</a
       >
       <div class="nav-links">
+        <input id="reportMonth" type="month" class="month-picker" />
+
+        <button class="btn" onclick="downloadMonthlyExcel()">
+          Download Monthly Excel
+        </button>
+
         <button class="btn" onclick="csvDownloadAdmin()">Export CSV</button
         ><button class="btn danger" onclick="logout()">Logout</button>
       </div>

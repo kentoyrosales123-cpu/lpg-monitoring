@@ -512,3 +512,37 @@ async function deleteUserAccount(userId) {
     toast(err.message);
   }
 }
+
+async function downloadMonthlyExcel() {
+  try {
+    const month = document.getElementById("reportMonth").value;
+
+    if (!month) {
+      toast("Please select a month first.");
+      return;
+    }
+
+    const res = await fetch(`/api/admin/export/monthly-excel?month=${month}`, {
+      headers: authHeaders(),
+    });
+
+    if (!res.ok) {
+      const data = await res.json();
+      throw new Error(data.message || "Excel export failed.");
+    }
+
+    const blob = await res.blob();
+    const url = window.URL.createObjectURL(blob);
+
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `lpg-monthly-report-${month}.xlsx`;
+    document.body.appendChild(a);
+    a.click();
+
+    a.remove();
+    window.URL.revokeObjectURL(url);
+  } catch (err) {
+    toast(err.message);
+  }
+}

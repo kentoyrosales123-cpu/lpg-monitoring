@@ -5,6 +5,7 @@ const { protect, adminOnly } = require("../middleware/authMiddleware");
 
 const router = express.Router();
 router.use(protect, adminOnly);
+const ExcelJS = require("exceljs");
 
 function calculateStatus({ lpgLevel, pressure }) {
   const lpg = Number(lpgLevel);
@@ -288,6 +289,117 @@ router.get("/export/csv", protect, adminOnly, async (req, res) => {
   } catch (error) {
     res.status(500).json({
       message: "CSV export failed.",
+      error: error.message,
+    });
+  }
+});
+
+router.get("/export/monthly-excel", protect, adminOnly, async (req, res) => {
+  try {
+    const { month } = req.query;
+
+    if (!month) {
+      return res.status(400).json({
+        message: "Month is required. Format: YYYY-MM",
+      });
+    }
+
+    const [year, monthNumber] = month.split("-").map(Number);
+
+    const startDate = new Date(year, monthNumber - 1, 1);
+    const endDate = new Date(year, monthNumber, 1);
+
+    const readings = await TankReading.find({
+      readingDateTime: {
+        $gte: startDate,
+        $lt: endDate,
+      },
+    })
+      .populate("submittedBy", "name email")
+      .sort({ readingDateTime: 1 });
+
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet("Monthly LPG Report");
+
+    worksheet.mergeCells("A1:I1");
+    worksheet.getCell("A1").value = "LPG TANK MONTHLY MONITORING REPORT";
+    worksheet.getCell("A1").font = {
+      bold: true,
+      size: 16,
+    };
+    worksheet.getCell("A1").alignment = {
+      horizontal: "center",
+    };
+
+    worksheet.mergeCells("A2:I2");
+    worksheet.getCell("A2").value = `Month: ${month}`;
+    worksheet.getCell("A2").alignment = {
+      horizontal: "center",
+    };
+
+    worksheet.addRow([]);
+
+    worksheet.addRow([
+      "No.",
+      "Tank",
+      "Date/Time",
+      "LPG Level",
+      "Pressure",
+      "Pressure Unit",
+      "Temperature",
+      "Status",
+      "Submitted By",
+      "Remarks",
+    ]);
+
+    const headerRow = worksheet.getRow(4);
+    headerRow.font = { bold: true };
+    headerRow.eachCell((cell) => {
+      cell.alignment = { horizontal: "center" };
+      cell.border = {
+        top: { style: "thin" },
+        left: { style: "thin" },
+        bottom: { style: "thin" },
+        right: { style: "thin" },
+      };
+    });
+
+    readings.forEach((r, index) => {
+      worksheet.addRow([
+        index + 1,
+        r.tankId,
+        new Date(r.readingDateTime).toLocaleString(),
+        `${r.lpgLevel}%`,
+        r.pressure,
+        r.pressureUnit === "percent" ? "%" : "PSI",
+        r.temperature ?? "-",
+        r.status,
+        r.submittedBy?.name || "Unknown",
+        r.remarks || "",
+      ]);
+    });
+
+    worksheet.columns.forEach((column) => {
+      column.width = 20;
+    });
+
+    worksheet.getColumn(10).width = 30;
+
+    res.setHeader(
+      "Content-Type",
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    );
+
+    res.setHeader(
+      "Content-Disposition",
+      `attachment; filename=lpg-monthly-report-${month}.xlsx`,
+    );
+
+    await workbook.xlsx.write(res);
+    res.end();
+  } catch (error) {
+    res.status(500).json({
+      message: "Monthly Excel export failed.",
       error: error.message,
     });
   }
