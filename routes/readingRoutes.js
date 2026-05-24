@@ -4,37 +4,36 @@ const { protect } = require("../middleware/authMiddleware");
 
 const router = express.Router();
 
-function calculateStatus({ pressure, pressureUnit, temperature }) {
-  const temp =
-    temperature === null || temperature === undefined || temperature === ""
-      ? null
-      : Number(temperature);
-
+function calculateStatus({ lpgLevel, pressure, pressureUnit, temperature }) {
+  const lpg = Number(lpgLevel);
   const pressureValue = Number(pressure);
 
-  // PRESSURE USING PSI
-  if (pressureUnit === "psi") {
-    if (pressureValue >= 161) return "Critical";
+  // LPG LEVEL STATUS
+  let lpgStatus = "Normal";
 
-    if (pressureValue >= 121) return "Warning";
-
-    return "Normal";
+  if (lpg < 20) {
+    lpgStatus = "Critical";
+  } else if (lpg >= 20 && lpg < 30) {
+    lpgStatus = "Warning";
   }
 
-  // PRESSURE USING PERCENTAGE
-  if (pressureUnit === "percent") {
-    if (pressureValue >= 81) return "Critical";
+  // PRESSURE STATUS
+  let pressureStatus = "Normal";
 
-    if (pressureValue >= 61) return "Warning";
-
-    return "Normal";
+  if (pressureValue < 30) {
+    pressureStatus = "Critical";
+  } else if (pressureValue >= 30 && pressureValue < 40) {
+    pressureStatus = "Warning";
   }
 
-  // OPTIONAL TEMPERATURE CHECK
-  if (temp !== null) {
-    if (temp >= 60) return "Critical";
+  // FINAL STATUS PRIORITY
+  // Critical overrides Warning
+  if (lpgStatus === "Critical" || pressureStatus === "Critical") {
+    return "Critical";
+  }
 
-    if (temp >= 50) return "Warning";
+  if (lpgStatus === "Warning" || pressureStatus === "Warning") {
+    return "Warning";
   }
 
   return "Normal";

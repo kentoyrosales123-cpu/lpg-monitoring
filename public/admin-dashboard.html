@@ -119,6 +119,7 @@
                   <th>Tank</th>
                   <th>Date/Time</th>
                   <th>Level</th>
+                  <th>LPG Status</th>
                   <th>Pressure</th>
                   <th>Temp</th>
                   <th>Status</th>
@@ -158,60 +159,89 @@
     <div id="editModal" class="modal">
       <div class="modal-box">
         <h2>Edit Tank Reading</h2>
+
         <form class="form" onsubmit="saveEdit(event)">
           <input type="hidden" name="id" id="editId" />
+
           <div class="grid two">
-            <label
-              >Tank ID<input name="tankId" id="editTankId" required /></label
-            ><label
-              >Date/Time<input
+            <label>
+              Tank ID / Name
+              <select name="tankId" id="editTankId" required>
+                <option value="">Select Tank</option>
+                <option value="LPG Tank 1">LPG Tank 1</option>
+                <option value="LPG Tank 2">LPG Tank 2</option>
+                <option value="LPG Tank 3">LPG Tank 3</option>
+                <option value="LPG Tank 4">LPG Tank 4</option>
+              </select>
+            </label>
+
+            <label>
+              Date and Time
+              <input
                 name="readingDateTime"
                 id="editDateTime"
                 type="datetime-local"
-                required /></label
-            ><label
-              >LPG Level<input
+                required
+              />
+            </label>
+
+            <label>
+              LPG Level (%)
+              <input
                 name="lpgLevel"
                 id="editLevel"
                 type="number"
                 step="0.01"
-                required /></label
-            ><label
-              >Pressure<input
+                min="0"
+                max="100"
+                required
+                placeholder="Enter LPG Level"
+              />
+            </label>
+
+            <label>
+              Pressure Unit
+              <select name="pressureUnit" id="editPressureUnit" required>
+                <option value="psi">PSI</option>
+                <option value="percent">Percentage (%)</option>
+              </select>
+            </label>
+
+            <label>
+              <span id="editPressureLabel">Pressure (PSI)</span>
+              <input
                 name="pressure"
                 id="editPressure"
                 type="number"
                 step="0.01"
-                required /></label
-            ><label
-              >Temperature<input
+                required
+                placeholder="Enter Pressure Level"
+              />
+            </label>
+
+            <label>
+              Temperature (°C) — Optional
+              <input
                 name="temperature"
                 id="editTemperature"
                 type="number"
                 step="0.01"
-                required /></label
-            ><label
-              >Volume<input
-                name="volume"
-                id="editVolume"
-                type="number"
-                step="0.01"
-                required /></label
-            ><label
-              >Weight<input
-                name="weight"
-                id="editWeight"
-                type="number"
-                step="0.01"
-                required
-            /></label>
+              />
+            </label>
           </div>
-          <label
-            >Remarks<textarea name="remarks" id="editRemarks"></textarea>
+
+          <label>
+            Remarks
+            <textarea
+              name="remarks"
+              id="editRemarks"
+              placeholder="Optional"
+            ></textarea>
           </label>
+
           <div class="nav-links">
-            <button class="btn primary">Save Changes</button
-            ><button type="button" class="btn" onclick="closeEditModal()">
+            <button class="btn primary">Save Changes</button>
+            <button type="button" class="btn" onclick="closeEditModal()">
               Cancel
             </button>
           </div>

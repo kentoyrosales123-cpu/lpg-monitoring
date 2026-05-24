@@ -6,11 +6,34 @@ const { protect, adminOnly } = require("../middleware/authMiddleware");
 const router = express.Router();
 router.use(protect, adminOnly);
 
-function calculateStatus({ lpgLevel, pressure, temperature }) {
-  if (pressure >= 160 || temperature >= 55 || lpgLevel >= 95 || lpgLevel <= 10)
+function calculateStatus({ lpgLevel, pressure }) {
+  const lpg = Number(lpgLevel);
+  const pressureValue = Number(pressure);
+
+  let lpgStatus = "Normal";
+
+  if (lpg < 20) {
+    lpgStatus = "Critical";
+  } else if (lpg >= 20 && lpg < 30) {
+    lpgStatus = "Warning";
+  }
+
+  let pressureStatus = "Normal";
+
+  if (pressureValue < 30) {
+    pressureStatus = "Critical";
+  } else if (pressureValue >= 30 && pressureValue < 40) {
+    pressureStatus = "Warning";
+  }
+
+  if (lpgStatus === "Critical" || pressureStatus === "Critical") {
     return "Critical";
-  if (pressure >= 120 || temperature >= 45 || lpgLevel >= 85 || lpgLevel <= 20)
+  }
+
+  if (lpgStatus === "Warning" || pressureStatus === "Warning") {
     return "Warning";
+  }
+
   return "Normal";
 }
 
@@ -108,9 +131,8 @@ router.put("/readings/:id", async (req, res) => {
       "readingDateTime",
       "lpgLevel",
       "pressure",
+      "pressureUnit",
       "temperature",
-      "volume",
-      "weight",
       "remarks",
     ];
     const changes = {};
@@ -118,13 +140,7 @@ router.put("/readings/:id", async (req, res) => {
     editable.forEach((field) => {
       if (req.body[field] !== undefined) {
         changes[field] = { from: reading[field], to: req.body[field] };
-        reading[field] = [
-          "lpgLevel",
-          "pressure",
-          "temperature",
-          "volume",
-          "weight",
-        ].includes(field)
+        reading[field] = ["lpgLevel", "pressure", "temperature"].includes(field)
           ? Number(req.body[field])
           : req.body[field];
       }

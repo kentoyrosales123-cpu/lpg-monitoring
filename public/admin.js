@@ -10,6 +10,29 @@ Chart.defaults.font.weight = "500";
 
 Chart.defaults.color = "#d6e4f0";
 
+function getLpgChartColor(level) {
+  level = Number(level);
+
+  if (level < 20) {
+    return "#ef4444"; // red
+  }
+
+  if (level < 30) {
+    return "#f59e0b"; // yellow
+  }
+
+  return "#22c55e"; // green
+}
+
+function getLpgStatus(level) {
+  level = Number(level);
+
+  if (level < 20) return "Critical";
+  if (level < 30) return "Warning";
+
+  return "Normal";
+}
+
 async function initAdmin() {
   requireAuth("admin");
   await Promise.all([loadAdminReadings(), loadUsers()]);
@@ -89,10 +112,37 @@ function renderAdminSummary(readings) {
 
 function renderAdminTable(readings) {
   document.getElementById("adminReadingsTable").innerHTML = readings
-    .map(
-      (r) =>
-        `<tr><td>${r.tankId}</td><td>${formatDate(r.readingDateTime)}</td><td>${r.lpgLevel}%</td><td>${r.pressure}</td><td>${r.temperature}°C</td><td>${badge(r.status)}</td><td>${r.submittedBy?.name || "Unknown"}</td><td>${r.remarks || ""}</td><td><button class="btn" onclick='openEditModal(${JSON.stringify(r).replace(/'/g, "&#39;")})'>Edit</button> <button class="btn danger" onclick="deleteReading('${r._id}')">Delete</button></td></tr>`,
-    )
+    .map((r) => {
+      const lpgStatus = getLpgStatus(r.lpgLevel);
+
+      return `
+      <tr>
+        <td>${r.tankId}</td>
+        <td>${formatDate(r.readingDateTime)}</td>
+        <td>${r.lpgLevel}%</td>
+        <td>${badge(lpgStatus)}</td>
+        <td>
+          ${r.pressure}
+          ${r.pressureUnit === "percent" ? "%" : " PSI"}
+        </td>
+        <td>${r.temperature ?? "-"}°C</td>
+        <td>${badge(r.status)}</td>
+        <td>${r.submittedBy?.name || "Unknown"}</td>
+        <td>${r.remarks || ""}</td>
+        <td>
+          <button class="btn"
+            onclick='openEditModal(${JSON.stringify(r).replace(/'/g, "&#39;")})'>
+            Edit
+          </button>
+
+          <button class="btn danger"
+            onclick="deleteReading('${r._id}')">
+            Delete
+          </button>
+        </td>
+      </tr>
+      `;
+    })
     .join("");
 }
 
@@ -122,6 +172,8 @@ function renderAdminCharts(readings) {
         {
           label: "LPG Level (%)",
           data: levelData,
+          backgroundColor: levelData.map((level) => getLpgChartColor(level)),
+          borderRadius: 10,
         },
       ],
     },
@@ -341,10 +393,32 @@ function openEditModal(r) {
   );
   document.getElementById("editLevel").value = r.lpgLevel;
   document.getElementById("editPressure").value = r.pressure;
-  document.getElementById("editTemperature").value = r.temperature;
+  document.getElementById("editPressureUnit").value = r.pressureUnit || "psi";
+  document.getElementById("editTemperature").value = r.temperature ?? "";
   document.getElementById("editRemarks").value = r.remarks || "";
+
+  updateEditPressureLabel();
+
   document.getElementById("editModal").classList.add("show");
 }
+
+function updateEditPressureLabel() {
+  const unit = document.getElementById("editPressureUnit");
+  const label = document.getElementById("editPressureLabel");
+
+  if (!unit || !label) return;
+
+  label.textContent = unit.value === "psi" ? "Pressure (PSI)" : "Pressure (%)";
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+  const editPressureUnit = document.getElementById("editPressureUnit");
+
+  if (editPressureUnit) {
+    editPressureUnit.addEventListener("change", updateEditPressureLabel);
+  }
+});
+
 function closeEditModal() {
   document.getElementById("editModal").classList.remove("show");
 }

@@ -5,6 +5,15 @@ async function initUser() {
   await loadMyReadings();
 }
 
+function getLpgStatus(level) {
+  level = Number(level);
+
+  if (level < 20) return "Critical";
+  if (level < 30) return "Warning";
+
+  return "Normal";
+}
+
 async function submitReading(e) {
   e.preventDefault();
 
@@ -74,38 +83,44 @@ function renderUserSummary(readings) {
 
 function renderUserTable(readings) {
   document.getElementById("myReadingsTable").innerHTML = readings
-    .map(
-      (r) => `
-      <tr>
-        <td>${r.tankId}</td>
+    .map((r) => {
+      const lpgStatus = getLpgStatus(r.lpgLevel);
 
-        <td>
-          ${formatDate(r.readingDateTime)}
-        </td>
+      return `
+        <tr>
+          <td>${r.tankId}</td>
 
-        <td>
-          ${r.lpgLevel}%
-        </td>
+          <td>
+            ${formatDate(r.readingDateTime)}
+          </td>
 
-        <td>
-          ${r.pressure}
-          ${r.pressureUnit === "percent" ? "%" : "PSI"}
-        </td>
+          <td>
+            ${r.lpgLevel}%
+          </td>
 
-        <td>
-          ${r.temperature ? r.temperature + "°C" : "-"}
-        </td>
+          <td>
+            ${badge(lpgStatus)}
+          </td>
 
-        <td>
-          ${badge(r.status)}
-        </td>
+          <td>
+            ${r.pressure}
+            ${r.pressureUnit === "percent" ? "%" : "PSI"}
+          </td>
 
-        <td>
-          ${r.remarks || ""}
-        </td>
-      </tr>
-    `,
-    )
+          <td>
+            ${r.temperature ? r.temperature + "°C" : "-"}
+          </td>
+
+          <td>
+            ${badge(r.status)}
+          </td>
+
+          <td>
+            ${r.remarks || ""}
+          </td>
+        </tr>
+      `;
+    })
     .join("");
 }
 
